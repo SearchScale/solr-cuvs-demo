@@ -53,15 +53,34 @@ RUN git apply solr-local-maven.patch
 RUN git status
 RUN ./gradlew --write-locks updateLicenses validateJarChecksums dev distTar
 
-# Run Solr
+# Building cuvs-bench
 WORKDIR /
 RUN mkdir workingarea
+WORKDIR /workingarea
+RUN git clone -b noble/cuvs-panama-2408 https://github.com/searchscale/cuvs-bench
+WORKDIR /workingarea/cuvs-bench
+RUN mvn compile assembly:single
+RUN cp target/*jar upload*sh query.py ..
+
+
+# Extract Solr and keep it ready to be run using Jupyter
+WORKDIR /
+RUN apt install -y lsof zip
 WORKDIR /workingarea
 RUN cp /solr/solr/packaging/build/distributions/solr-10.0.0-SNAPSHOT.tgz .
 RUN tar -xf solr-10.0.0-SNAPSHOT.tgz
 WORKDIR /workingarea/solr-10.0.0-SNAPSHOT
 RUN echo "SOLR_JETTY_HOST=0.0.0.0" >> bin/solr.in.sh
+#RUN bin/solr start -m 16G --force
+COPY conf/ /workingarea/conf
+#CMD ["bin/solr", "start", "-m", "16G", "--force", "-f"]
 
+# Run Jupyter Notebook
+COPY demo.ipynb /workingarea/solr-cuvs-demo.ipynb
+WORKDIR /workingarea
+RUN apt install -y python3-pip curl httpie
+RUN pip3 install --break-system-packages jupyter
+
+EXPOSE 8888
 EXPOSE 8983
-
-CMD ["bin/solr", "start", "-m", "16G", "--force", "-f"]
+CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root"]
