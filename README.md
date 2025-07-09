@@ -16,3 +16,4 @@ From another terminal, run the following:
     (cd conf && zip -r - *) | curl -X POST --header "Content-Type:application/octet-stream" --data-binary @- "http://localhost:8983/solr/admin/configs?action=UPLOAD&name=cuvs"
     curl "http://localhost:8983/solr/admin/collections?action=CREATE&name=test&numShards=1&collection.configName=cuvs"
 
+    // Now download the dataset, create the batches, upload to Solr
