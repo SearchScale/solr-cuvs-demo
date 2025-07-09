@@ -60,10 +60,8 @@ WORKDIR /workingarea
 RUN cp /solr/solr/packaging/build/distributions/solr-10.0.0-SNAPSHOT.tgz .
 RUN tar -xf solr-10.0.0-SNAPSHOT.tgz
 WORKDIR /workingarea/solr-10.0.0-SNAPSHOT
-
-
-# Upload the configset
 RUN echo "SOLR_JETTY_HOST=0.0.0.0" >> bin/solr.in.sh
+
 EXPOSE 8983
 
 CMD ["bin/solr", "start", "-m", "16G", "--force", "-f"]
