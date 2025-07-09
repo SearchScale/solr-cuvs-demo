@@ -1,0 +1,63 @@
+diff --git a/build-tools/build-infra/build.gradle b/build-tools/build-infra/build.gradle
+index bf2bd7f563b..16ad36dea31 100644
+--- a/build-tools/build-infra/build.gradle
++++ b/build-tools/build-infra/build.gradle
+@@ -22,10 +22,8 @@ plugins {
+ }
+ 
+ repositories {
+-    maven {         
+-        url = uri("https://maven.searchscale.com/snapshots")
+-    }
+-    mavenCentral()
++  mavenLocal()    
++  mavenCentral()
+ }
+ 
+ group = "org.apache"
+diff --git a/gradle/globals.gradle b/gradle/globals.gradle
+index a1fc537e42f..25bfddc9beb 100644
+--- a/gradle/globals.gradle
++++ b/gradle/globals.gradle
+@@ -22,9 +22,7 @@ allprojects {
+ 
+   // Repositories to fetch dependencies from.
+   repositories {
+-    maven {         
+-        url = uri("https://maven.searchscale.com/snapshots")
+-    }
++    mavenLocal()
+     mavenCentral()
+   }
+ 
+diff --git a/lucene/sandbox/build.gradle b/lucene/sandbox/build.gradle
+index 87715de2037..14764715fb7 100644
+--- a/lucene/sandbox/build.gradle
++++ b/lucene/sandbox/build.gradle
+@@ -19,13 +19,6 @@ apply plugin: 'java-library'
+ 
+ description = 'Various third party contributions and new ideas'
+ 
+-repositories {
+-    maven {         
+-        url = uri("https://maven.searchscale.com/snapshots")
+-    }
+-}
+-
+-
+ dependencies {
+   moduleApi project(':lucene:core')
+   moduleApi project(':lucene:queries')
+diff --git a/lucene/sandbox/src/java/org/apache/lucene/sandbox/vectorsearch/CuVSVectorsReader.java b/lucene/sandbox/src/java/org/apache/lucene/sandbox/vectorsearch/CuVSVectorsReader.java
+index cfb59121e36..d5244063d82 100644
+--- a/lucene/sandbox/src/java/org/apache/lucene/sandbox/vectorsearch/CuVSVectorsReader.java
++++ b/lucene/sandbox/src/java/org/apache/lucene/sandbox/vectorsearch/CuVSVectorsReader.java
+@@ -353,7 +353,7 @@ public class CuVSVectorsReader extends KnnVectorsReader {
+     if (knnCollector.k() <= 1024 && cuvsIndex.getCagraIndex() != null) {
+       // log.info("searching cagra index");
+       CagraSearchParams searchParams =
+-          new CagraSearchParams.Builder(resources)
++          new CagraSearchParams.Builder()
+               .withItopkSize(topK) // TODO: params
+               .withSearchWidth(1)
+               .build();
