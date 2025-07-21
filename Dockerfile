@@ -20,7 +20,7 @@ RUN apt install python3 -y
 RUN git clone https://github.com/searchscale/cuvs
 WORKDIR /cuvs
 RUN git checkout investigate-multithreaded-failures
-RUN ./build.sh libcuvs --gpu-arch=75-real
+RUN ./build.sh libcuvs
 
 # Install JDK 22
 RUN wget https://corretto.aws/downloads/resources/22.0.2.9.1/java-22-amazon-corretto-jdk_22.0.2.9-1_amd64.deb
