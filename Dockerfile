@@ -20,7 +20,7 @@ RUN apt install python3 -y
 RUN git clone https://github.com/searchscale/cuvs
 WORKDIR /cuvs
 RUN git checkout investigate-multithreaded-failures
-RUN ./build.sh libcuvs
+RUN ./build.sh libcuvs --gpu-arch=75-real
 
 # Install JDK 22
 RUN wget https://corretto.aws/downloads/resources/22.0.2.9.1/java-22-amazon-corretto-jdk_22.0.2.9-1_amd64.deb
@@ -77,9 +77,17 @@ COPY conf/ /workingarea/conf
 
 # Run Jupyter Notebook
 COPY demo.ipynb /workingarea/solr-cuvs-demo.ipynb
+COPY batches_10k.tgz /workingarea/batches_10k.tgz
+COPY ground_truth.csv /workingarea/ground_truth_topK=10_numQueries=8192_numVectors=10000.csv
+COPY query_test.ipynb /workingarea/query_test.ipynb
+COPY utils.py /workingarea/utils.py
+COPY conf /workingarea/tmp_config
+COPY wiki_queries_over_1M.parquet /workingarea/wiki_queries_over_1M.parquet
+COPY batches_10k /workingarea/batches_10k
+
 WORKDIR /workingarea
 RUN apt install -y python3-pip curl httpie
-RUN pip3 install --break-system-packages jupyter
+RUN pip3 install --break-system-packages jupyter pyarrow pandas tqdm
 
 EXPOSE 8888
 EXPOSE 8983
