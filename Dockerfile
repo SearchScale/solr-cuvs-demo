@@ -77,7 +77,6 @@ COPY conf/ /workingarea/conf
 
 # Run Jupyter Notebook
 COPY demo.ipynb /workingarea/solr-cuvs-demo.ipynb
-COPY batches_10k.tgz /workingarea/batches_10k.tgz
 COPY ground_truth.csv /workingarea/ground_truth_topK=10_numQueries=8192_numVectors=10000.csv
 COPY query_test.ipynb /workingarea/query_test.ipynb
 COPY utils.py /workingarea/utils.py
