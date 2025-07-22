@@ -88,6 +88,15 @@ WORKDIR /workingarea
 RUN apt install -y python3-pip curl httpie
 RUN pip3 install --break-system-packages jupyter pyarrow pandas tqdm
 
+# Build cuvs python
+RUN ln -s /usr/bin/python3 /usr/bin/python
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+ENV cuvs_DIR=/cuvs/cpp/build
+RUN pip3 install rapids_build_backend scikit_build_core pylibraft-cu12==25.8.0a74 cuda-python numpy --extra-index-url=https://pypi.anaconda.org/rapidsai-wheels-nightly/simple/
+RUN apt install cython3
+WORKDIR /cuvs
+RUN ./build python
+
 EXPOSE 8888
 EXPOSE 8983
 CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root"]
