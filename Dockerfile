@@ -95,7 +95,7 @@ ENV cuvs_DIR=/cuvs/cpp/build
 RUN pip3 install rapids_build_backend scikit_build_core pylibraft-cu12==25.8.0a74 cuda-python numpy --extra-index-url=https://pypi.anaconda.org/rapidsai-wheels-nightly/simple/
 RUN apt install cython3
 WORKDIR /cuvs
-RUN ./build python
+RUN ./build.sh python
 
 EXPOSE 8888
 EXPOSE 8983
