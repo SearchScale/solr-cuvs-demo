@@ -97,6 +97,7 @@ RUN apt install cython3
 WORKDIR /cuvs
 RUN ./build.sh python
 
+WORKDIR /workingarea
 EXPOSE 8888
 EXPOSE 8983
 CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root"]
