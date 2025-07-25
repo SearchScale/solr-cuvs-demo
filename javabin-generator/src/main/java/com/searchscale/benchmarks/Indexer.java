@@ -95,21 +95,77 @@ public class Indexer {
     if (batchSz > docsCount)
       batchSz = docsCount;
 
-    try (InputStream in = new GZIPInputStream(new FileInputStream(p.dataFile))) {
-      BufferedReader br = new BufferedReader(new InputStreamReader(in));
-      String header = br.readLine();
-      int count = 0;
-      for (int i = 0;; i++) {
-        String name = p.outputFile + "." + i;
-        try (FileOutputStream os = new FileOutputStream(name)) {
-          JavaBinCodec codec = new J(os);
-          if (!writeBatch(batchSz, br, codec, p.isLegacy))
-            break;
-          System.out.println(name);
-          count += batchSz;
-          if (count > docsCount)
-            break;
+    // Check if the file is fvec/fbin format
+    if (p.dataFile.endsWith(".fvecs") || p.dataFile.endsWith(".fbin") || p.dataFile.endsWith(".fvecs.gz")) {
+      processFvecFile(p, docsCount, batchSz);
+    } else {
+      // Original CSV processing
+      try (InputStream in = new GZIPInputStream(new FileInputStream(p.dataFile))) {
+        BufferedReader br = new BufferedReader(new InputStreamReader(in));
+        String header = br.readLine();
+        int count = 0;
+        for (int i = 0;; i++) {
+          String name = p.outputFile + "." + i;
+          try (FileOutputStream os = new FileOutputStream(name)) {
+            JavaBinCodec codec = new J(os);
+            if (!writeBatch(batchSz, br, codec, p.isLegacy))
+              break;
+            System.out.println(name);
+            count += batchSz;
+            if (count > docsCount)
+              break;
+          }
         }
+      }
+    }
+  }
+
+  private static void processFvecFile(Params p, long docsCount, long batchSz) throws Exception {
+    List<float[]> vectors = new ArrayList<>();
+    
+    // Read all vectors from the fvec file
+    FBIvecsReader.readFvecs(p.dataFile, (int) docsCount, vectors);
+    
+    int totalProcessed = 0;
+    int batchIndex = 0;
+    
+    while (totalProcessed < vectors.size() && totalProcessed < docsCount) {
+      String name = p.outputFile + "." + batchIndex;
+      try (FileOutputStream os = new FileOutputStream(name)) {
+        JavaBinCodec codec = new J(os);
+        int batchCount = 0;
+        
+        codec.writeTag(ITERATOR);
+        
+        while (batchCount < batchSz && totalProcessed < vectors.size() && totalProcessed < docsCount) {
+          float[] vector = vectors.get(totalProcessed);
+          
+          // Create a document with id and vector
+          final int docId = totalProcessed;
+          final float[] vectorData = vector;
+          MapWriter d = ew -> {
+            ew.put("id", String.valueOf(docId));
+            if (p.isLegacy) {
+              // Convert float[] to List<Float> for legacy mode
+              List<Float> floatList = new ArrayList<>();
+              for (float f : vectorData) {
+                floatList.add(f);
+              }
+              ew.put("article_vector", floatList);
+            } else {
+              ew.put("article_vector", vectorData);
+            }
+          };
+          
+          codec.writeMap(d);
+          batchCount++;
+          totalProcessed++;
+        }
+        
+        codec.writeTag(END);
+        codec.close();
+        System.out.println(name);
+        batchIndex++;
       }
     }
   }

@@ -33,28 +33,66 @@ public class FBIvecsReader {
 
       if (filePath.endsWith("fvecs.gz")) {
         is = new GZIPInputStream(new FileInputStream(filePath));
-      } else if (filePath.endsWith(".fvecs")) {
+      } else if (filePath.endsWith(".fvecs") || filePath.endsWith(".fbin")) {
         is = new FileInputStream(filePath);
       }
 
-      int dimension = getDimension(is);
-      float[] row = new float[dimension];
       int count = 0;
-      int rc = 0;
-
-      while (is.available() != 0) {
-        ByteBuffer bbf = ByteBuffer.wrap(is.readNBytes(4));
-        bbf.order(ByteOrder.LITTLE_ENDIAN);
-        row[rc++] = bbf.getFloat();
-
-        if (rc == dimension) {
+      int dimension = -1;
+      
+      // For .fbin files, read header differently
+      if (filePath.endsWith(".fbin")) {
+        // Read total count (first 4 bytes)
+        int totalCount = getDimension(is);
+        log.info("Total vectors in file: {}", totalCount);
+        
+        // Read dimension (second 4 bytes)
+        dimension = getDimension(is);
+        log.info("Vector dimension: {}", dimension);
+        
+        if (dimension <= 0 || dimension > 10000) {
+          log.warn("Invalid dimension: {}", dimension);
+          return;
+        }
+        
+        // Read vectors
+        while (count < numRows && count < totalCount) {
+          float[] row = new float[dimension];
+          
+          for (int i = 0; i < dimension; i++) {
+            ByteBuffer bbf = ByteBuffer.wrap(is.readNBytes(4));
+            bbf.order(ByteOrder.LITTLE_ENDIAN);
+            row[i] = bbf.getFloat();
+          }
+          
           vectors.add(row);
           count += 1;
-          rc = 0;
-          row = new float[dimension];
-
-          // Skip last 4 bytes.
-          is.readNBytes(4);
+          
+          if (count % 1000 == 0) {
+            System.out.print(".");
+          }
+        }
+      } else {
+        // Original .fvecs format - dimension per vector
+        while (is.available() != 0) {
+          // Read dimension for each vector
+          dimension = getDimension(is);
+          if (dimension <= 0 || dimension > 10000) {
+            log.warn("Invalid dimension: {}", dimension);
+            break;
+          }
+          
+          float[] row = new float[dimension];
+          
+          // Read the vector data
+          for (int i = 0; i < dimension; i++) {
+            ByteBuffer bbf = ByteBuffer.wrap(is.readNBytes(4));
+            bbf.order(ByteOrder.LITTLE_ENDIAN);
+            row[i] = bbf.getFloat();
+          }
+          
+          vectors.add(row);
+          count += 1;
 
           if (count % 1000 == 0) {
             System.out.print(".");
@@ -65,6 +103,7 @@ public class FBIvecsReader {
           }
         }
       }
+      
       System.out.println();
       is.close();
       log.info("Reading complete. Read {} vectors.", count);

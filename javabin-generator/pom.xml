@@ -41,27 +41,13 @@
       <scope>test</scope>
     </dependency>
 
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-sandbox</artifactId>
-            <version>11.0.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-core</artifactId>
-            <version>11.0.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-codecs</artifactId>
-            <version>11.0.0-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
+        <!-- Remove SNAPSHOT dependencies and use stable versions -->
+        <!-- These dependencies are not needed for the basic Indexer functionality -->
 
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-test-framework</artifactId>
-            <version>9.11.0</version>
+            <version>9.9.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -127,10 +113,70 @@
 		    <artifactId>solr-solrj</artifactId>
 		    <version>9.5.0</version>
 		</dependency>
+		<!-- Solr test framework -->
+		<dependency>
+		    <groupId>org.apache.solr</groupId>
+		    <artifactId>solr-test-framework</artifactId>
+		    <version>9.5.0</version>
+		    <scope>test</scope>
+		</dependency>
+		<dependency>
+		    <groupId>org.apache.solr</groupId>
+		    <artifactId>solr-core</artifactId>
+		    <version>9.5.0</version>
+		    <scope>test</scope>
+		</dependency>
+		<!-- Add backward codecs to resolve missing HNSW classes -->
+		<dependency>
+		    <groupId>org.apache.lucene</groupId>
+		    <artifactId>lucene-backward-codecs</artifactId>
+		    <version>9.9.2</version>
+		    <scope>test</scope>
+		</dependency>
 
   </dependencies>
 
   <build>
+    <plugins>
+      <!-- Maven Assembly Plugin for creating executable JAR with dependencies -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.6.0</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>com.searchscale.benchmarks.Indexer</mainClass>
+            </manifest>
+          </archive>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- Maven Failsafe Plugin for integration tests -->
+      <plugin>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>3.3.0</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
     <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
       <plugins>
         <!-- clean lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
@@ -150,6 +196,18 @@
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>3.3.0</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>3.3.0</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>integration-test</goal>
+                <goal>verify</goal>
+              </goals>
+            </execution>
+          </executions>
         </plugin>
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
