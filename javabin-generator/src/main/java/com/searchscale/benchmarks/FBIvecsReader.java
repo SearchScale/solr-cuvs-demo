@@ -212,4 +212,94 @@ public class FBIvecsReader {
       e.printStackTrace();
     }
   }
+
+  /**
+   * Read a specific range of vectors from an fbin file for parallel processing
+   */
+  public static void readFvecsRange(String filePath, int startIndex, int count, List<float[]> vectors) {
+    try {
+      InputStream is = new FileInputStream(filePath);
+      
+      if (filePath.endsWith(".fbin")) {
+        // Read header
+        int totalCount = getDimension(is);
+        int dimension = getDimension(is);
+        
+        if (dimension <= 0 || dimension > 10000) {
+          log.warn("Invalid dimension: {}", dimension);
+          return;
+        }
+        
+        // Skip to the start index
+        long bytesToSkip = (long) startIndex * dimension * 4L; // 4 bytes per float
+        long skipped = is.skip(bytesToSkip);
+        if (skipped != bytesToSkip) {
+          // Handle case where skip didn't work as expected
+          is.close();
+          is = new FileInputStream(filePath);
+          getDimension(is); // Skip total count
+          getDimension(is); // Skip dimension
+          
+          // Skip vectors one by one if skip() doesn't work
+          for (int i = 0; i < startIndex; i++) {
+            for (int j = 0; j < dimension; j++) {
+              is.readNBytes(4); // Skip each float
+            }
+          }
+        }
+        
+        // Read the requested range
+        int readCount = 0;
+        while (readCount < count && (startIndex + readCount) < totalCount) {
+          float[] row = new float[dimension];
+          
+          for (int i = 0; i < dimension; i++) {
+            byte[] bytes = is.readNBytes(4);
+            if (bytes.length < 4) {
+              // End of file reached
+              is.close();
+              return;
+            }
+            ByteBuffer bbf = ByteBuffer.wrap(bytes);
+            bbf.order(ByteOrder.LITTLE_ENDIAN);
+            row[i] = bbf.getFloat();
+          }
+          
+          vectors.add(row);
+          readCount++;
+        }
+      } else {
+        // For .fvecs format, we need to read sequentially
+        // This is less efficient but maintains compatibility
+        log.warn("Range reading is less efficient for .fvecs format. Consider using .fbin format for better parallel performance.");
+        
+        int currentIndex = 0;
+        while (is.available() != 0 && currentIndex < startIndex + count) {
+          int dimension = getDimension(is);
+          if (dimension <= 0 || dimension > 10000) {
+            break;
+          }
+          
+          float[] row = new float[dimension];
+          for (int i = 0; i < dimension; i++) {
+            ByteBuffer bbf = ByteBuffer.wrap(is.readNBytes(4));
+            bbf.order(ByteOrder.LITTLE_ENDIAN);
+            row[i] = bbf.getFloat();
+          }
+          
+          // Only add vectors in our range
+          if (currentIndex >= startIndex) {
+            vectors.add(row);
+          }
+          
+          currentIndex++;
+        }
+      }
+      
+      is.close();
+    } catch (Exception e) {
+      log.error("Error reading range [{}, {}] from file: {}", startIndex, startIndex + count - 1, filePath, e);
+      e.printStackTrace();
+    }
+  }
 }

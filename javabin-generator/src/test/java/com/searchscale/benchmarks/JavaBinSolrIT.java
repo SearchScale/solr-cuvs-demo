@@ -103,10 +103,11 @@ public class JavaBinSolrIT extends SolrCloudTestCase {
         // Generate JavaBin files using the Indexer
         String[] args = {
             "data_file=" + testFilePath,
-            "output_file=" + tempDir.resolve("batch").toString(),
+            "output_dir=" + tempDir.resolve("batches").toString(),
             "batch_size=" + BATCH_SIZE,
             "docs_count=" + VECTOR_COUNT,
-            "legacy=false"
+            "legacy=false",
+            "overwrite=true"
         };
         
         Indexer.main(args);
